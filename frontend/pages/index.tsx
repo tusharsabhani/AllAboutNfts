@@ -11,9 +11,14 @@ const Home: NextPage = () => {
 
   const { address } = useAccount();
   const [enterAddress, setEnterAddress] = useState("");
+  //for logged in user
   const [nftDetails, setNftDetails] = useState<OwnedNftsResponse>();
-  const [noOfNftsFetched, setNoOfNftsFetched] = useState(0);
   const [dataFetched, setDataFetched] = useState(false);
+  const [noOfNftsFetched, setNoOfNftsFetched] = useState(0);
+  //for searching any address
+  const [nftDetailsSearch, setNftDetailsSearch] = useState<OwnedNftsResponse>();
+  const [dataFetchedSearch, setDataFetchedSearch] = useState(false);
+  const [noOfNftsFetchedSearch, setNoOfNftsFetchedSearch] = useState(0);
 
   const config = {
     apiKey: "SgFPh5gQUCimLa1Vam8ZocKrmMwd3_V-",
@@ -21,18 +26,53 @@ const Home: NextPage = () => {
   };
 
   const alchemy = new Alchemy(config);
+  const myRefButton = React.useRef<HTMLDivElement>(null);
+  const myButton = myRefButton.current;
+  const searchRefButton = React.useRef<HTMLDivElement>(null);
+  const searchButton = searchRefButton.current;
+
+  const myRefDiv = React.useRef<HTMLDivElement>(null);
+  const myAddresss = myRefDiv.current;
+  const searchRefDiv = React.useRef<HTMLDivElement>(null);
+  const searchAddresss = searchRefDiv.current;
+
+  function myAddress() {
+    myAddresss?.classList.remove("hidden");
+    searchAddresss?.classList.add("hidden");
+    myButton?.classList.add("bg-blue-600");
+    myButton?.classList.add("text-white");
+    searchButton?.classList.remove("bg-blue-600");
+    searchButton?.classList.remove("text-white");
+  }
+
+  function searchAddress() {
+    myAddresss?.classList.add("hidden");
+    searchAddresss?.classList.remove("hidden");
+    myButton?.classList.remove("bg-blue-600");
+    myButton?.classList.remove("text-white");
+    searchButton?.classList.add("bg-blue-600");
+    searchButton?.classList.add("text-white");
+  }
 
   async function fetchNfts() {
-    let owner = "idrt.eth";
+    let owner;
+    address ? owner = address : owner = enterAddress;
     // let options : GetBaseNftsForOwnerOptions = {
     //   pageSize: 10,
     //   omitMetadata: true
     // };
-    let response = await alchemy.nft.getNftsForOwner(enterAddress); //"idrt.eth"
-    setNftDetails(response);
-    setDataFetched(true);
-    setNoOfNftsFetched(response.totalCount);
-    console.log("RESPONSE" + response);
+
+    let response = await alchemy.nft.getNftsForOwner(owner); //"idrt.eth"
+
+    if (!(myAddresss?.classList.contains("hidden"))) {
+      setNftDetails(response);
+      setDataFetched(true);
+      setNoOfNftsFetched(response.totalCount);
+    } else {
+      setNftDetailsSearch(response);
+      setDataFetchedSearch(true);
+      setNoOfNftsFetchedSearch(response.totalCount);
+    }
   };
 
 
@@ -122,35 +162,57 @@ const Home: NextPage = () => {
           </div>
         )
       }
+    } else {
+      return (
+        <div></div>
+      )
     }
   }
 
-  const myRefButton = React.useRef<HTMLDivElement>(null);
-  const myButton = myRefButton.current;
-  const searchRefButton = React.useRef<HTMLDivElement>(null);
-  const searchButton = searchRefButton.current;
+  function showNftsSearch() {
 
-  const myRefDiv = React.useRef<HTMLDivElement>(null);
-  const myAddresss = myRefDiv.current;
-  const searchRefDiv = React.useRef<HTMLDivElement>(null);
-  const searchAddresss = searchRefDiv.current;
+    if (dataFetchedSearch) {
+      if (noOfNftsFetchedSearch > 0 && nftDetailsSearch != null) {
+        return (
+          <div className="grid grid-cols-4">
+            {
+              nftDetailsSearch.ownedNfts.map((element) => {
+                if (element.title.length > 0) {
+                  return (
+                    <div className="flex-col items-center justify-center mx-10 my-10 text-lg box-border max-w-sm rounded overflow-hidden shadow-lg">
+                      <img className="w-full h-60" src={element.media.at(0)?.gateway} alt="displaying the nft" />
+                      <div className="px-6 py-4">
+                        <div className="font-bold text-xl mb-2">{element.title}</div>
+                      </div>
+                    </div>
+                  )
+                }
 
-  function myAddress() {
-    myAddresss?.classList.remove("hidden");
-    searchAddresss?.classList.add("hidden");
-    myButton?.classList.add("bg-blue-600");
-    myButton?.classList.add("text-white");
-    searchButton?.classList.remove("bg-blue-600");
-    searchButton?.classList.remove("text-white");
-  }
-
-  function searchAddress() {
-    myAddresss?.classList.add("hidden");
-    searchAddresss?.classList.remove("hidden");
-    myButton?.classList.remove("bg-blue-600");
-    myButton?.classList.remove("text-white");
-    searchButton?.classList.add("bg-blue-600");
-    searchButton?.classList.add("text-white");
+              })
+            }
+          </div>
+        )
+      }
+      else {
+        return (
+          <div>
+            <p>Sorry there are no NFTs owned by this address currently, in the meantime have a look at our minions NFT</p>
+            <div className="grid grid-cols-4">
+              <div className="flex-col items-center justify-center mx-10 my-10 text-lg box-border max-w-sm rounded overflow-hidden shadow-lg">
+                <img className="w-full h-60" src="https://cdn.wallpapersafari.com/54/55/fTKnpB.jpg" alt="displaying the nft" />
+                <div className="px-6 py-4">
+                  <div className="font-bold text-xl mb-2">Minions</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    } else {
+      return (
+        <div></div>
+      )
+    }
   }
 
   return (
@@ -173,15 +235,6 @@ const Home: NextPage = () => {
       </main>
 
       <div className='pt-[12.5vh] mx-3 h-[85vh]'>
-
-        {/* <div className='flex justify-center mb-10'>
-          <label className="inline-flex items-center p-2 rounded-md cursor-pointer dark:text-gray-800">
-            <input type="checkbox" className="hidden peer" />
-            <span className="px-4 py-2 rounded-l-md dark:bg-violet-400 peer-checked:dark:bg-gray-300" onChange={myAddress}>My Address</span>
-            <span className="px-4 py-2 rounded-r-md dark:bg-gray-300 peer-checked:dark:bg-violet-400" onChange={searchAddress}>Search Address</span>
-          </label>
-        </div> */}
-
         <div className='flex justify-center'>
           <div className='flex flex-row border-4 border-blue-100 rounded-md bg-blue-100 mt-4 p-0.5'>
             <div ref={myRefButton} className='cursor-pointer p-2 bg-blue-600 text-white rounded-md' onClick={myAddress}>
@@ -193,26 +246,44 @@ const Home: NextPage = () => {
           </div>
         </div>
 
-        <div ref={myRefDiv} className='flex justify-center space-x-5 mt-10'>
-          <input className='border-2 border-red-500 px-2 cursor-not-allowed' placeholder='Your address' onChange={(e) => setEnterAddress(e.target.value)} disabled/>
-          <button className='p-3 rounded-2xl bg-green-500' onClick={fetchNfts}>FETCH</button>
-        </div>
+        {(address != null) ?
+          <div ref={myRefDiv} className='flex justify-center space-x-5 mt-10'>
+            <div>
+              <input className='border-2 border-red-500 px-2 cursor-not-allowed' placeholder={address} disabled />
+              <button className='p-3 rounded-2xl bg-green-500' onClick={fetchNfts}>FETCH</button>
+
+              <div className='mt-8'>
+                {showNfts()}
+              </div>
+            </div>
+          </div> :
+          <div ref={myRefDiv} className='flex justify-center space-x-5 mt-10'>
+            <input className='border-2 border-red-500 px-2 cursor-not-allowed' placeholder={'Pleae login to see your NFTs'} disabled />
+            <button className='p-3 rounded-2xl bg-green-500 cursor-not-allowed' onClick={fetchNfts} disabled>FETCH</button>
+          </div>
+        }
 
         <div ref={searchRefDiv} className='flex justify-center space-x-5 hidden mt-10'>
-          <input className='border-2 border-blue-500 px-2' placeholder='Enter address' onChange={(e) => setEnterAddress(e.target.value)} />
-          <button className='p-3 rounded-2xl bg-yellow-500' onClick={fetchNfts}>FETCH</button>
+          <div>
+            <input className='border-2 border-blue-500 px-2' placeholder='Enter address' onChange={(e) => setEnterAddress(e.target.value)} />
+            <button className='p-3 rounded-2xl bg-yellow-500' onClick={fetchNfts}>FETCH</button>
+
+            <div className='mt-8'>
+              {showNftsSearch()}
+            </div>
+          </div>
         </div>
 
-      </div>
 
-      {showNfts()}
 
-      <div>
-        <footer className={styles.footer}>
-          <a>
-            Made by Sabhani Bros.
-          </a>
-        </footer>
+        <div className=''>
+          <footer className={styles.footer}>
+            <a>
+              Made by Sabhani Bros.
+            </a>
+          </footer>
+        </div>
+
       </div>
     </div>
   );
